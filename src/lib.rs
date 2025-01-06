@@ -1873,6 +1873,57 @@ mod egl1_5 {
 #[cfg(feature = "1_5")]
 pub use egl1_5::*;
 
+// ------------------------------------------------------------------------------------------------
+// EGL EXT
+// ------------------------------------------------------------------------------------------------
+
+#[cfg(feature = "ext")]
+mod eglEXT {
+	use super::*;
+
+	pub type UInt64 = u64;
+
+	type eglQueryDmaBufModifiers = extern "C" fn(
+		dpy: EGLDisplay, format: Int, max_modifiers: Int, modifiers: *mut UInt64, external_only: Boolean, num_modifiers: &mut Int)
+		-> Boolean;
+	static mut eglQueryDmaBufModifiers: Option<eglQueryDmaBufModifiers> = None;
+	impl<T: api::EGL1_0> Instance<T> {
+		pub fn query_dma_buf_modifiers(
+			&self,
+			display: Display,
+			format: Int,
+			modifiers: &mut Vec<UInt64>,
+			external_only: Boolean
+		) -> Result<(), Error> {
+			unsafe {
+				if eglQueryDmaBufModifiers.is_none() {
+					let addr = self.get_proc_address("eglQueryDmaBufModifiersEXT");
+					eglQueryDmaBufModifiers = Some(std::mem::transmute(addr))
+				}
+
+				let mut num = 0;
+				if (eglQueryDmaBufModifiers.unwrap())(
+					display.as_ptr(),
+					format, 
+					modifiers.capacity().try_into().unwrap(),
+					modifiers.as_mut_ptr() as *mut UInt64,
+					external_only,
+					&mut num
+				) == TRUE {
+					modifiers.set_len(num as usize);
+					Ok(())
+				} else {
+					Err(self.get_error().unwrap())
+				}
+			}
+		}
+	}
+}
+
+#[cfg(feature = "ext")]
+pub use eglEXT::*;
+
+
 // -------------------------------------------------------------------------------------------------
 // FFI
 // -------------------------------------------------------------------------------------------------

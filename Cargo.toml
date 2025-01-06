@@ -12,10 +12,11 @@ build         = "build.rs"
 edition       = "2021"
 
 [features]
-default = ["1_5"]
+default = ["1_5", "ext"]
 static = ["pkg-config"]
 no-pkg-config = []
 dynamic = ["libloading"]
+"ext" = ["1_2"]
 "1_5" = ["1_4"]
 "1_4" = ["1_3"]
 "1_3" = ["1_2"]
